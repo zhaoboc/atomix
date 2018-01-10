@@ -13,26 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive;
+package io.atomix.protocols.raft.proxy;
 
-import io.atomix.primitive.service.PrimitiveStateMachine;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 
 /**
- * Test primitive type.
+ * Raft primitive proxy.
  */
-public class TestPrimitiveType implements PrimitiveType {
-  @Override
-  public String id() {
-    return "test";
-  }
-
-  @Override
-  public PrimitiveStateMachine newService() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    throw new UnsupportedOperationException();
-  }
+public interface RaftProxyClient extends PrimitiveProxyClient {
 }

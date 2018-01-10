@@ -16,10 +16,10 @@
 package io.atomix.core.map;
 
 import io.atomix.core.map.impl.ConsistentMapProxyBuilder;
-import io.atomix.core.map.impl.ConsistentMapService;
+import io.atomix.core.map.impl.ConsistentMapStateMachine;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -49,8 +49,8 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new ConsistentMapService();
+  public PrimitiveStateMachine newService() {
+    return new ConsistentMapStateMachine();
   }
 
   @Override

@@ -16,10 +16,10 @@
 package io.atomix.core.map;
 
 import io.atomix.core.map.impl.AtomicCounterMapProxyBuilder;
-import io.atomix.core.map.impl.AtomicCounterMapService;
+import io.atomix.core.map.impl.AtomicCounterMapStateMachine;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -48,8 +48,8 @@ public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBu
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new AtomicCounterMapService();
+  public PrimitiveStateMachine newService() {
+    return new AtomicCounterMapStateMachine();
   }
 
   @Override

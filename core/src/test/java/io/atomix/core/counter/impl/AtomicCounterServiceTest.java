@@ -15,18 +15,12 @@
  */
 package io.atomix.core.counter.impl;
 
-import io.atomix.core.counter.impl.AtomicCounterService;
 import io.atomix.core.counter.impl.AtomicCounterOperations.Set;
-import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.Session;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import org.junit.Test;
 
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.SET;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 
 /**
  * Counter service test.
@@ -34,26 +28,16 @@ import static org.mockito.Mockito.mock;
 public class AtomicCounterServiceTest {
   @Test
   public void testSnapshot() throws Exception {
-    AtomicCounterService service = new AtomicCounterService();
-    service.set(new DefaultCommit<>(
-        2,
-        SET,
-        new Set(1L),
-        mock(Session.class),
-        System.currentTimeMillis()));
+    AtomicCounterStateMachine service = new AtomicCounterStateMachine();
+    service.set(new Set(1L));
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(buffer);
 
-    service = new AtomicCounterService();
+    service = new AtomicCounterStateMachine();
     service.restore(buffer.flip());
 
-    long value = service.get(new DefaultCommit<>(
-        2,
-        GET,
-        null,
-        mock(Session.class),
-        System.currentTimeMillis()));
+    long value = service.get();
     assertEquals(1, value);
   }
 }

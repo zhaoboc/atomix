@@ -30,8 +30,8 @@ import io.atomix.core.tree.impl.DocumentTreeOperations.GetChildren;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Listen;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Unlisten;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.impl.AsyncPrimitiveClient;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.utils.Match;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -62,7 +62,7 @@ import static io.atomix.core.tree.impl.DocumentTreeResult.Status.OK;
 /**
  * Distributed resource providing the {@link AsyncDocumentTree} primitive.
  */
-public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDocumentTree<byte[]> {
+public class DocumentTreeProxy extends AsyncPrimitiveClient implements AsyncDocumentTree<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(DocumentTreeOperations.NAMESPACE)
@@ -71,10 +71,10 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   private final Map<DocumentTreeListener<byte[]>, InternalListener> eventListeners = new HashMap<>();
 
-  public DocumentTreeProxy(PrimitiveProxy proxy) {
+  public DocumentTreeProxy(PrimitiveProxyClient proxy) {
     super(proxy);
     proxy.addStateChangeListener(state -> {
-      if (state == PrimitiveProxy.State.CONNECTED && isListening()) {
+      if (state == PrimitiveProxyClient.State.CONNECTED && isListening()) {
         proxy.invoke(ADD_LISTENER, SERIALIZER::encode, new Listen());
       }
     });
@@ -83,7 +83,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   @Override
   public CompletableFuture<Void> destroy() {
-    return proxy.invoke(CLEAR);
+    return client.invoke(CLEAR);
   }
 
   @Override
@@ -93,7 +93,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   @Override
   public CompletableFuture<Map<String, Versioned<byte[]>>> getChildren(DocumentPath path) {
-    return proxy.<GetChildren, DocumentTreeResult<Map<String, Versioned<byte[]>>>>invoke(
+    return client.<GetChildren, DocumentTreeResult<Map<String, Versioned<byte[]>>>>invoke(
         GET_CHILDREN,
         SERIALIZER::encode,
         new GetChildren(checkNotNull(path)),
@@ -111,12 +111,12 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(DocumentPath path) {
-    return proxy.invoke(GET, SERIALIZER::encode, new Get(checkNotNull(path)), SERIALIZER::decode);
+    return client.invoke(GET, SERIALIZER::encode, new Get(checkNotNull(path)), SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> set(DocumentPath path, byte[] value) {
-    return proxy.<Update, DocumentTreeResult<Versioned<byte[]>>>invoke(UPDATE,
+    return client.<Update, DocumentTreeResult<Versioned<byte[]>>>invoke(UPDATE,
         SERIALIZER::encode,
         new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.any()),
         SERIALIZER::decode)
@@ -156,7 +156,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, long version) {
-    return proxy.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
+    return client.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
         SERIALIZER::encode,
         new Update(checkNotNull(path),
             Optional.ofNullable(newValue),
@@ -167,7 +167,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, byte[] currentValue) {
-    return proxy.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
+    return client.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
         SERIALIZER::encode,
         new Update(checkNotNull(path),
             Optional.ofNullable(newValue),
@@ -190,7 +190,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
     if (path.equals(DocumentPath.from("root"))) {
       return Futures.exceptionalFuture(new IllegalDocumentModificationException());
     }
-    return proxy.<Update, DocumentTreeResult<Versioned<byte[]>>>invoke(UPDATE,
+    return client.<Update, DocumentTreeResult<Versioned<byte[]>>>invoke(UPDATE,
         SERIALIZER::encode,
         new Update(checkNotNull(path), null, Match.any(), Match.ifNotNull()),
         SERIALIZER::decode)
@@ -212,7 +212,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
     InternalListener internalListener = new InternalListener(path, listener, MoreExecutors.directExecutor());
     // TODO: Support API that takes an executor
     if (!eventListeners.containsKey(listener)) {
-      return proxy.invoke(ADD_LISTENER, SERIALIZER::encode, new Listen(path))
+      return client.invoke(ADD_LISTENER, SERIALIZER::encode, new Listen(path))
           .thenRun(() -> eventListeners.put(listener, internalListener));
     }
     return CompletableFuture.completedFuture(null);
@@ -223,7 +223,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
     checkNotNull(listener);
     InternalListener internalListener = eventListeners.remove(listener);
     if (internalListener != null && eventListeners.isEmpty()) {
-      return proxy.invoke(REMOVE_LISTENER, SERIALIZER::encode, new Unlisten(internalListener.path))
+      return client.invoke(REMOVE_LISTENER, SERIALIZER::encode, new Unlisten(internalListener.path))
           .thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
@@ -235,7 +235,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
   }
 
   private CompletableFuture<DocumentTreeResult.Status> createInternal(DocumentPath path, byte[] value) {
-    return proxy.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
+    return client.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
         SERIALIZER::encode,
         new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.ifNull()),
         SERIALIZER::decode)

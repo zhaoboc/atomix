@@ -16,12 +16,12 @@
 package io.atomix.primitive.session;
 
 import io.atomix.primitive.event.PrimitiveEvent;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 /**
  * Support for listening for state changes in server sessions.
  * <p>
- * When implemented by a {@link PrimitiveService StateMachine}, this interface provides
+ * When implemented by a {@link PrimitiveStateMachine StateMachine}, this interface provides
  * support to state machines for reacting to changes in the sessions connected to the cluster. State machines
  * can react to clients {@link #onOpen(Session) registering} and {@link #onClose(Session) unregistering}
  * sessions and servers {@link #onExpire(Session) expiring} sessions.

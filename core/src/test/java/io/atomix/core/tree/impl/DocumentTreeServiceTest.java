@@ -16,7 +16,6 @@
 package io.atomix.core.tree.impl;
 
 import io.atomix.core.tree.DocumentPath;
-import io.atomix.core.tree.impl.DocumentTreeService;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Get;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
 import io.atomix.primitive.Ordering;
@@ -52,7 +51,7 @@ public class DocumentTreeServiceTest {
   }
 
   private void testSnapshot(Ordering ordering) throws Exception {
-    DocumentTreeService service = new DocumentTreeService(ordering);
+    DocumentTreeStateMachine service = new DocumentTreeStateMachine(ordering);
     service.update(new DefaultCommit<>(
         2,
         UPDATE,
@@ -67,7 +66,7 @@ public class DocumentTreeServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(buffer);
 
-    service = new DocumentTreeService(ordering);
+    service = new DocumentTreeStateMachine(ordering);
     service.restore(buffer.flip());
 
     Versioned<byte[]> value = service.get(new DefaultCommit<>(

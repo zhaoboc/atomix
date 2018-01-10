@@ -16,11 +16,11 @@
 package io.atomix.core.tree;
 
 import io.atomix.core.tree.impl.DocumentTreeProxyBuilder;
-import io.atomix.core.tree.impl.DocumentTreeService;
+import io.atomix.core.tree.impl.DocumentTreeStateMachine;
 import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -64,8 +64,8 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new DocumentTreeService(ordering);
+  public PrimitiveStateMachine newService() {
+    return new DocumentTreeStateMachine(ordering);
   }
 
   @Override

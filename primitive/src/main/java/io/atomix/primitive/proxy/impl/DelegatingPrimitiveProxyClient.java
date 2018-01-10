@@ -20,7 +20,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.primitive.session.SessionId;
 
 import java.util.Map;
@@ -33,11 +33,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Default Raft proxy.
  */
-public class DelegatingPrimitiveProxy implements PrimitiveProxy {
-  private final PrimitiveProxy proxy;
+public class DelegatingPrimitiveProxyClient implements PrimitiveProxyClient {
+  private final PrimitiveProxyClient proxy;
   private final Map<String, Map<Object, Consumer<PrimitiveEvent>>> eventTypeListeners = Maps.newConcurrentMap();
 
-  public DelegatingPrimitiveProxy(PrimitiveProxy proxy) {
+  public DelegatingPrimitiveProxyClient(PrimitiveProxyClient proxy) {
     this.proxy = proxy;
   }
 
@@ -138,7 +138,7 @@ public class DelegatingPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> connect() {
+  public CompletableFuture<PrimitiveProxyClient> connect() {
     return proxy.connect().thenApply(c -> this);
   }
 

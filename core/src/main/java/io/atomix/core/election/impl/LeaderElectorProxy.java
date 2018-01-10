@@ -28,8 +28,8 @@ import io.atomix.core.election.impl.LeaderElectorOperations.GetLeadership;
 import io.atomix.core.election.impl.LeaderElectorOperations.Promote;
 import io.atomix.core.election.impl.LeaderElectorOperations.Run;
 import io.atomix.core.election.impl.LeaderElectorOperations.Withdraw;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.impl.AsyncPrimitiveClient;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
@@ -53,7 +53,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Distributed resource providing the {@link AsyncLeaderElector} primitive.
  */
-public class LeaderElectorProxy extends AbstractAsyncPrimitive implements AsyncLeaderElector<byte[]> {
+public class LeaderElectorProxy extends AsyncPrimitiveClient implements AsyncLeaderElector<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(LeaderElectorOperations.NAMESPACE)
       .register(LeaderElectorEvents.NAMESPACE)
@@ -61,10 +61,10 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive implements AsyncL
 
   private final Set<LeadershipEventListener<byte[]>> leadershipChangeListeners = Sets.newCopyOnWriteArraySet();
 
-  public LeaderElectorProxy(PrimitiveProxy proxy) {
+  public LeaderElectorProxy(PrimitiveProxyClient proxy) {
     super(proxy);
     proxy.addStateChangeListener(state -> {
-      if (state == PrimitiveProxy.State.CONNECTED && isListening()) {
+      if (state == PrimitiveProxyClient.State.CONNECTED && isListening()) {
         proxy.invoke(ADD_LISTENER);
       }
     });
@@ -77,43 +77,43 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive implements AsyncL
 
   @Override
   public CompletableFuture<Leadership<byte[]>> run(String topic, byte[] id) {
-    return proxy.invoke(RUN, SERIALIZER::encode, new Run(topic, id), SERIALIZER::decode);
+    return client.invoke(RUN, SERIALIZER::encode, new Run(topic, id), SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<Void> withdraw(String topic, byte[] id) {
-    return proxy.invoke(WITHDRAW, SERIALIZER::encode, new Withdraw(topic, id));
+    return client.invoke(WITHDRAW, SERIALIZER::encode, new Withdraw(topic, id));
   }
 
   @Override
   public CompletableFuture<Boolean> anoint(String topic, byte[] id) {
-    return proxy.invoke(ANOINT, SERIALIZER::encode, new Anoint(topic, id), SERIALIZER::decode);
+    return client.invoke(ANOINT, SERIALIZER::encode, new Anoint(topic, id), SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<Boolean> promote(String topic, byte[] id) {
-    return proxy.invoke(PROMOTE, SERIALIZER::encode, new Promote(topic, id), SERIALIZER::decode);
+    return client.invoke(PROMOTE, SERIALIZER::encode, new Promote(topic, id), SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<Void> evict(byte[] id) {
-    return proxy.invoke(EVICT, SERIALIZER::encode, new Evict(id));
+    return client.invoke(EVICT, SERIALIZER::encode, new Evict(id));
   }
 
   @Override
   public CompletableFuture<Leadership<byte[]>> getLeadership(String topic) {
-    return proxy.invoke(GET_LEADERSHIP, SERIALIZER::encode, new GetLeadership(topic), SERIALIZER::decode);
+    return client.invoke(GET_LEADERSHIP, SERIALIZER::encode, new GetLeadership(topic), SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<Map<String, Leadership<byte[]>>> getLeaderships() {
-    return proxy.invoke(GET_ALL_LEADERSHIPS, SERIALIZER::decode);
+    return client.invoke(GET_ALL_LEADERSHIPS, SERIALIZER::decode);
   }
 
   @Override
   public synchronized CompletableFuture<Void> addListener(LeadershipEventListener<byte[]> listener) {
     if (leadershipChangeListeners.isEmpty()) {
-      return proxy.invoke(ADD_LISTENER).thenRun(() -> leadershipChangeListeners.add(listener));
+      return client.invoke(ADD_LISTENER).thenRun(() -> leadershipChangeListeners.add(listener));
     } else {
       leadershipChangeListeners.add(listener);
       return CompletableFuture.completedFuture(null);
@@ -123,7 +123,7 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive implements AsyncL
   @Override
   public synchronized CompletableFuture<Void> removeListener(LeadershipEventListener<byte[]> listener) {
     if (leadershipChangeListeners.remove(listener) && leadershipChangeListeners.isEmpty()) {
-      return proxy.invoke(REMOVE_LISTENER).thenApply(v -> null);
+      return client.invoke(REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }

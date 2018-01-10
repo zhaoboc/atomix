@@ -16,10 +16,10 @@
 package io.atomix.core.queue;
 
 import io.atomix.core.queue.impl.WorkQueueProxyBuilder;
-import io.atomix.core.queue.impl.WorkQueueService;
+import io.atomix.core.queue.impl.WorkQueueStateMachine;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -48,8 +48,8 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new WorkQueueService();
+  public PrimitiveStateMachine newService() {
+    return new WorkQueueStateMachine();
   }
 
   @Override

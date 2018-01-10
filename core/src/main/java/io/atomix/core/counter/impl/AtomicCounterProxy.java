@@ -21,21 +21,11 @@ import io.atomix.core.counter.impl.AtomicCounterOperations.AddAndGet;
 import io.atomix.core.counter.impl.AtomicCounterOperations.CompareAndSet;
 import io.atomix.core.counter.impl.AtomicCounterOperations.GetAndAdd;
 import io.atomix.core.counter.impl.AtomicCounterOperations.Set;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.impl.AsyncPrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
-
-import static io.atomix.core.counter.impl.AtomicCounterOperations.ADD_AND_GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.COMPARE_AND_SET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.DECREMENT_AND_GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_ADD;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_DECREMENT;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_INCREMENT;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.INCREMENT_AND_GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.SET;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -43,14 +33,14 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Atomix counter implementation.
  */
-public class AtomicCounterProxy extends AbstractAsyncPrimitive implements AsyncAtomicCounter {
+public class AtomicCounterProxy extends AsyncPrimitiveProxy<AtomicCounterService> implements AsyncAtomicCounter {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicCounterOperations.NAMESPACE)
       .build());
 
-  public AtomicCounterProxy(PrimitiveProxy proxy) {
-    super(proxy);
+  public AtomicCounterProxy(PrimitiveProxyClient proxy) {
+    super(proxy, AtomicCounterService.class, SERIALIZER);
   }
 
   private long nullOrZero(Long value) {
@@ -59,48 +49,47 @@ public class AtomicCounterProxy extends AbstractAsyncPrimitive implements AsyncA
 
   @Override
   public CompletableFuture<Long> get() {
-    return proxy.<Long>invoke(GET, SERIALIZER::decode).thenApply(this::nullOrZero);
+    return proxy.invoke(service -> service.get()).thenApply(this::nullOrZero);
   }
 
   @Override
   public CompletableFuture<Void> set(long value) {
-    return proxy.invoke(SET, SERIALIZER::encode, new Set(value));
+    return proxy.call(service -> service.set(new Set(value)));
   }
 
   @Override
   public CompletableFuture<Boolean> compareAndSet(long expectedValue, long updateValue) {
-    return proxy.invoke(COMPARE_AND_SET, SERIALIZER::encode,
-        new CompareAndSet(expectedValue, updateValue), SERIALIZER::decode);
+    return proxy.invoke(service -> service.compareAndSet(new CompareAndSet(expectedValue, updateValue)));
   }
 
   @Override
   public CompletableFuture<Long> addAndGet(long delta) {
-    return proxy.invoke(ADD_AND_GET, SERIALIZER::encode, new AddAndGet(delta), SERIALIZER::decode);
+    return proxy.invoke(service -> service.addAndGet(new AddAndGet(delta)));
   }
 
   @Override
   public CompletableFuture<Long> getAndAdd(long delta) {
-    return proxy.invoke(GET_AND_ADD, SERIALIZER::encode, new GetAndAdd(delta), SERIALIZER::decode);
+    return proxy.invoke(service -> service.getAndAdd(new GetAndAdd(delta)));
   }
 
   @Override
   public CompletableFuture<Long> incrementAndGet() {
-    return proxy.invoke(INCREMENT_AND_GET, SERIALIZER::decode);
+    return proxy.invoke(service -> service.incrementAndGet());
   }
 
   @Override
   public CompletableFuture<Long> getAndIncrement() {
-    return proxy.invoke(GET_AND_INCREMENT, SERIALIZER::decode);
+    return proxy.invoke(service -> service.getAndIncrement());
   }
 
   @Override
   public CompletableFuture<Long> decrementAndGet() {
-    return proxy.invoke(DECREMENT_AND_GET, SERIALIZER::decode);
+    return proxy.invoke(service -> service.decrementAndGet());
   }
 
   @Override
   public CompletableFuture<Long> getAndDecrement() {
-    return proxy.invoke(GET_AND_DECREMENT, SERIALIZER::decode);
+    return proxy.invoke(service -> service.getAndDecrement());
   }
 
   @Override

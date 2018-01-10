@@ -26,8 +26,8 @@ import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
+import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxyClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.CloseRequest;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
@@ -49,7 +49,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup proxy.
  */
-public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
+public class PrimaryBackupProxyClient extends AbstractPrimitiveProxyClient {
   private Logger log;
   private final PrimitiveType primitiveType;
   private final PrimitiveDescriptor descriptor;
@@ -65,7 +65,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   private PrimaryTerm term;
   private volatile State state = State.CLOSED;
 
-  public PrimaryBackupProxy(
+  public PrimaryBackupProxyClient(
       String clientName,
       SessionId sessionId,
       PrimitiveType primitiveType,
@@ -82,7 +82,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
     this.primaryElection = primaryElection;
     this.threadContext = threadContext;
     primaryElection.addListener(primaryElectionListener);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxyClient.class)
         .addValue(clientName)
         .add("type", primitiveType.id())
         .add("name", descriptor.name())
@@ -217,8 +217,8 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> connect() {
-    CompletableFuture<PrimitiveProxy> future = new CompletableFuture<>();
+  public CompletableFuture<PrimitiveProxyClient> connect() {
+    CompletableFuture<PrimitiveProxyClient> future = new CompletableFuture<>();
     threadContext.execute(() -> {
       primaryElection.getTerm().whenCompleteAsync((term, error) -> {
         if (error == null) {

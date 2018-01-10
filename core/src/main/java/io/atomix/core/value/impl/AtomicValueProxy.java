@@ -22,8 +22,8 @@ import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueEventListener;
 import io.atomix.core.value.impl.AtomicValueOperations.CompareAndSet;
 import io.atomix.core.value.impl.AtomicValueOperations.GetAndSet;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.impl.AsyncPrimitiveClient;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Atomix counter implementation.
  */
-public class AtomicValueProxy extends AbstractAsyncPrimitive implements AsyncAtomicValue<byte[]> {
+public class AtomicValueProxy extends AsyncPrimitiveClient implements AsyncAtomicValue<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicValueOperations.NAMESPACE)
@@ -51,35 +51,35 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive implements AsyncAto
 
   private final Set<AtomicValueEventListener<byte[]>> eventListeners = Sets.newConcurrentHashSet();
 
-  public AtomicValueProxy(PrimitiveProxy proxy) {
+  public AtomicValueProxy(PrimitiveProxyClient proxy) {
     super(proxy);
   }
 
   @Override
   public CompletableFuture<byte[]> get() {
-    return proxy.invoke(GET, SERIALIZER::decode);
+    return client.invoke(GET, SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<Void> set(byte[] value) {
-    return proxy.invoke(SET, SERIALIZER::encode, new AtomicValueOperations.Set(value));
+    return client.invoke(SET, SERIALIZER::encode, new AtomicValueOperations.Set(value));
   }
 
   @Override
   public CompletableFuture<Boolean> compareAndSet(byte[] expect, byte[] update) {
-    return proxy.invoke(COMPARE_AND_SET, SERIALIZER::encode,
+    return client.invoke(COMPARE_AND_SET, SERIALIZER::encode,
         new CompareAndSet(expect, update), SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<byte[]> getAndSet(byte[] value) {
-    return proxy.invoke(GET_AND_SET, SERIALIZER::encode, new GetAndSet(value), SERIALIZER::decode);
+    return client.invoke(GET_AND_SET, SERIALIZER::encode, new GetAndSet(value), SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<Void> addListener(AtomicValueEventListener<byte[]> listener) {
     if (eventListeners.isEmpty()) {
-      return proxy.invoke(ADD_LISTENER).thenRun(() -> eventListeners.add(listener));
+      return client.invoke(ADD_LISTENER).thenRun(() -> eventListeners.add(listener));
     } else {
       eventListeners.add(listener);
       return CompletableFuture.completedFuture(null);
@@ -89,7 +89,7 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive implements AsyncAto
   @Override
   public CompletableFuture<Void> removeListener(AtomicValueEventListener<byte[]> listener) {
     if (eventListeners.remove(listener) && eventListeners.isEmpty()) {
-      return proxy.invoke(REMOVE_LISTENER).thenApply(v -> null);
+      return client.invoke(REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }

@@ -40,7 +40,7 @@ import io.atomix.core.map.impl.ConsistentMapOperations.TransactionRollback;
 import io.atomix.core.map.impl.MapUpdate.Type;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.AbstractPrimitiveStateMachine;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
@@ -97,7 +97,7 @@ import static io.atomix.core.map.impl.ConsistentMapOperations.VALUES;
 /**
  * State Machine for {@link ConsistentMapProxy} resource.
  */
-public class ConsistentMapService extends AbstractPrimitiveService {
+public class ConsistentMapStateMachine extends AbstractPrimitiveStateMachine {
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
@@ -118,7 +118,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   protected Map<TransactionId, TransactionScope> activeTransactions = Maps.newHashMap();
   protected long currentVersion;
 
-  public ConsistentMapService() {
+  public ConsistentMapStateMachine() {
     map = createMap();
   }
 
@@ -147,7 +147,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   public void restore(BufferInput<?> reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(serializer()::decode)) {
-      listeners.put(sessionId, sessions().getSession(sessionId));
+      listeners.put(sessionId, getSessions().getSession(sessionId));
     }
     preparedKeys = reader.readObject(serializer()::decode);
     map = reader.readObject(serializer()::decode);
@@ -155,7 +155,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
     currentVersion = reader.readLong();
     map.forEach((key, value) -> {
       if (value.ttl() > 0) {
-        value.timer = scheduler().schedule(Duration.ofMillis(value.ttl() - (wallClock().time().unixTimestamp() - value.created())), () -> {
+        value.timer = getScheduler().schedule(Duration.ofMillis(value.ttl() - (getWallClock().time().unixTimestamp() - value.created())), () -> {
           entries().remove(key, value);
           publish(new MapEvent<>(MapEvent.Type.REMOVE, "", key, null, toVersioned(value)));
         });
@@ -370,7 +370,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    */
   protected void scheduleTtl(String key, MapEntryValue value) {
     if (value.ttl() > 0) {
-      value.timer = scheduler().schedule(Duration.ofMillis(value.ttl()), () -> {
+      value.timer = getScheduler().schedule(Duration.ofMillis(value.ttl()), () -> {
         entries().remove(key, value);
         publish(new MapEvent<>(MapEvent.Type.REMOVE, "", key, null, toVersioned(value)));
       });
@@ -815,7 +815,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
         return PrepareResult.OK;
       }
     } catch (Exception e) {
-      logger().warn("Failure applying {}", commit, e);
+      getLogger().warn("Failure applying {}", commit, e);
       throw Throwables.propagate(e);
     }
   }
@@ -837,7 +837,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
       this.currentVersion = commit.index();
       return commitTransaction(transactionScope);
     } catch (Exception e) {
-      logger().warn("Failure applying {}", commit, e);
+      getLogger().warn("Failure applying {}", commit, e);
       throw Throwables.propagate(e);
     } finally {
       discardTombstones();

@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.AbstractPrimitiveStateMachine;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
@@ -89,7 +89,7 @@ import java.util.stream.Collectors;
 /**
  * State Machine for {@link ConsistentSetMultimapProxy} resource.
  */
-public class ConsistentSetMultimapService extends AbstractPrimitiveService {
+public class ConsistentSetMultimapStateMachine extends AbstractPrimitiveStateMachine {
 
   private final Serializer serializer = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
@@ -131,7 +131,7 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
 
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(serializer::decode)) {
-      listeners.put(sessionId, sessions().getSession(sessionId));
+      listeners.put(sessionId, getSessions().getSession(sessionId));
     }
 
     backingMap = reader.readObject(serializer::decode);

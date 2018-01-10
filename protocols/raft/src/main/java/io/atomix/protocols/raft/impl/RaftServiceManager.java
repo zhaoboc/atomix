@@ -19,7 +19,7 @@ import com.google.common.primitives.Longs;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.RaftException;
@@ -60,7 +60,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Internal server state machine.
  * <p>
- * The internal state machine handles application of commands to the user provided {@link PrimitiveService}
+ * The internal state machine handles application of commands to the user provided {@link PrimitiveStateMachine}
  * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
  */
 public class RaftServiceManager implements AutoCloseable {
@@ -489,7 +489,7 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies a command entry to the state machine.
    * <p>
-   * Command entries result in commands being executed on the user provided {@link PrimitiveService} and a
+   * Command entries result in commands being executed on the user provided {@link PrimitiveStateMachine} and a
    * response being sent back to the client by completing the returned future. All command responses are
    * cached in the command's {@link RaftSession} for fault tolerance. In the event that the same command
    * is applied to the state machine more than once, the original response will be returned.
@@ -529,7 +529,7 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies a query entry to the state machine.
    * <p>
-   * Query entries are applied to the user {@link PrimitiveService} for read-only operations.
+   * Query entries are applied to the user {@link PrimitiveStateMachine} for read-only operations.
    * Because queries are read-only, they may only be applied on a single server in the cluster,
    * and query entries do not go through the Raft log. Thus, it is critical that measures be taken
    * to ensure clients see a consistent view of the cluster event when switching servers. To do so,

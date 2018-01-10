@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftException.ProtocolException;
@@ -149,7 +149,7 @@ final class RaftProxyInvoker {
    * @param attempt The attempt to submit.
    */
   private <T extends OperationRequest, U extends OperationResponse> void invoke(OperationAttempt<T, U> attempt) {
-    if (state.getState() == PrimitiveProxy.State.CLOSED) {
+    if (state.getState() == PrimitiveProxyClient.State.CLOSED) {
       attempt.fail(new PrimitiveException.ClosedSession("session closed"));
     } else {
       attempts.put(attempt.sequence, attempt);
@@ -285,7 +285,7 @@ final class RaftProxyInvoker {
 
       // If the session has been closed, update the client's state.
       if (CLOSED_PREDICATE.test(t)) {
-        state.setState(PrimitiveProxy.State.CLOSED);
+        state.setState(PrimitiveProxyClient.State.CLOSED);
       }
     }
 
@@ -353,7 +353,7 @@ final class RaftProxyInvoker {
             || response.error().type() == RaftError.Type.UNKNOWN_SESSION
             || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
-          state.setState(PrimitiveProxy.State.CLOSED);
+          state.setState(PrimitiveProxyClient.State.CLOSED);
           complete(response.error().createException());
         }
         // For all other errors, use fibonacci backoff to resubmit the command.
@@ -417,7 +417,7 @@ final class RaftProxyInvoker {
             || response.error().type() == RaftError.Type.UNKNOWN_SESSION
             || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
-          state.setState(PrimitiveProxy.State.CLOSED);
+          state.setState(PrimitiveProxyClient.State.CLOSED);
           complete(response.error().createException());
         } else {
           complete(response.error().createException());

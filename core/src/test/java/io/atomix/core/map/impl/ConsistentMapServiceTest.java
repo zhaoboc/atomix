@@ -43,7 +43,7 @@ public class ConsistentMapServiceTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testSnapshot() throws Exception {
-    ConsistentMapService service = new TestConsistentMapService();
+    ConsistentMapStateMachine service = new TestConsistentMapStateMachine();
 
     service.put(new DefaultCommit<>(
         2,
@@ -55,7 +55,7 @@ public class ConsistentMapServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(buffer);
 
-    service = new TestConsistentMapService();
+    service = new TestConsistentMapStateMachine();
     service.restore(buffer.flip());
 
     Versioned<byte[]> value = service.get(new DefaultCommit<>(
@@ -70,9 +70,9 @@ public class ConsistentMapServiceTest {
     assertNotNull(service.entries().get("foo").timer);
   }
 
-  private static class TestConsistentMapService extends ConsistentMapService {
+  private static class TestConsistentMapStateMachine extends ConsistentMapStateMachine {
     @Override
-    protected Scheduler scheduler() {
+    protected Scheduler getScheduler() {
       return new Scheduler() {
         @Override
         public Scheduled schedule(Duration delay, Runnable callback) {
@@ -87,7 +87,7 @@ public class ConsistentMapServiceTest {
     }
 
     @Override
-    protected WallClock wallClock() {
+    protected WallClock getWallClock() {
       return new WallClock();
     }
   }

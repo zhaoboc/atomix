@@ -18,7 +18,7 @@ package io.atomix.primitive.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 
 import java.util.Collection;
 import java.util.Set;
@@ -32,8 +32,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Abstract base class for primitives that interact with Raft replicated state machines via proxy.
  */
-public abstract class AbstractAsyncPrimitive implements AsyncPrimitive {
-  private final Function<PrimitiveProxy.State, Status> mapper = state -> {
+public abstract class AsyncPrimitiveClient implements AsyncPrimitive {
+  private final Function<PrimitiveProxyClient.State, Status> mapper = state -> {
     switch (state) {
       case CONNECTED:
         return Status.ACTIVE;
@@ -46,17 +46,17 @@ public abstract class AbstractAsyncPrimitive implements AsyncPrimitive {
     }
   };
 
-  protected final PrimitiveProxy proxy;
+  protected final PrimitiveProxyClient client;
   private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
 
-  public AbstractAsyncPrimitive(PrimitiveProxy proxy) {
-    this.proxy = checkNotNull(proxy, "proxy cannot be null");
-    proxy.addStateChangeListener(this::onStateChange);
+  public AsyncPrimitiveClient(PrimitiveProxyClient client) {
+    this.client = checkNotNull(client, "proxy cannot be null");
+    client.addStateChangeListener(this::onStateChange);
   }
 
   @Override
   public String name() {
-    return proxy.name();
+    return client.name();
   }
 
   /**
@@ -64,7 +64,7 @@ public abstract class AbstractAsyncPrimitive implements AsyncPrimitive {
    *
    * @param state the updated Raft session state
    */
-  private void onStateChange(PrimitiveProxy.State state) {
+  private void onStateChange(PrimitiveProxyClient.State state) {
     statusChangeListeners.forEach(listener -> listener.accept(mapper.apply(state)));
   }
 
@@ -85,13 +85,13 @@ public abstract class AbstractAsyncPrimitive implements AsyncPrimitive {
 
   @Override
   public CompletableFuture<Void> close() {
-    return proxy.close();
+    return client.close();
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("proxy", proxy)
+        .add("proxy", client)
         .toString();
   }
 }

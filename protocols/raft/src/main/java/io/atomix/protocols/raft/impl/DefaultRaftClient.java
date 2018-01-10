@@ -18,15 +18,15 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
-import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxy;
-import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
+import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxyClient;
+import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxyClient;
+import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxyClient;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxy;
+import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxyClient;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -122,9 +122,9 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
+  public PrimitiveProxyClient newProxy(String primitiveName, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
     // Create a proxy builder that uses the session manager to open a session.
-    Supplier<PrimitiveProxy> proxyFactory = () -> new DefaultRaftProxy(
+    Supplier<PrimitiveProxyClient> proxyFactory = () -> new DefaultRaftProxyClient(
         primitiveName,
         primitiveType,
         DefaultRaftClient.this.protocol,
@@ -136,11 +136,11 @@ public class DefaultRaftClient implements RaftClient {
         primitiveProtocol.minTimeout(),
         primitiveProtocol.maxTimeout());
 
-    PrimitiveProxy proxy;
+    PrimitiveProxyClient proxy;
 
     // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
     if (primitiveProtocol.recoveryStrategy() == Recovery.RECOVER) {
-      proxy = new RecoveringPrimitiveProxy(
+      proxy = new RecoveringPrimitiveProxyClient(
           clientId,
           primitiveName,
           primitiveType,
@@ -152,7 +152,7 @@ public class DefaultRaftClient implements RaftClient {
 
     // If max retries is set, wrap the client in a retrying proxy client.
     if (primitiveProtocol.maxRetries() > 0) {
-      proxy = new RetryingPrimitiveProxy(
+      proxy = new RetryingPrimitiveProxyClient(
           proxy,
           threadContextFactory.createContext(),
           primitiveProtocol.maxRetries(),
@@ -163,7 +163,7 @@ public class DefaultRaftClient implements RaftClient {
     Executor executor = primitiveProtocol.executor() != null
         ? primitiveProtocol.executor()
         : threadContextFactory.createContext();
-    return new BlockingAwarePrimitiveProxy(proxy, executor);
+    return new BlockingAwarePrimitiveProxyClient(proxy, executor);
   }
 
   @Override

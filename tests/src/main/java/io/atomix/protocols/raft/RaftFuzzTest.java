@@ -27,13 +27,13 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
+import io.atomix.primitive.service.AbstractPrimitiveStateMachine;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.protocols.raft.RaftPerformanceTest.PerformanceService;
+import io.atomix.protocols.raft.RaftPerformanceTest.PerformanceStateMachine;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.protocol.AppendRequest;
@@ -319,7 +319,7 @@ public class RaftFuzzTest implements Runnable {
     for (int i = 0; i < clients; i++) {
       ReadConsistency consistency = randomConsistency();
       RaftClient client = createClient();
-      PrimitiveProxy proxy = createProxy(client, consistency);
+      PrimitiveProxyClient proxy = createProxy(client, consistency);
       Scheduler scheduler = new SingleThreadContext("fuzz-test-" + i);
 
       final int clientId = i;
@@ -615,7 +615,7 @@ public class RaftFuzzTest implements Runnable {
   /**
    * Creates a test session.
    */
-  private PrimitiveProxy createProxy(RaftClient client, ReadConsistency consistency) {
+  private PrimitiveProxyClient createProxy(RaftClient client, ReadConsistency consistency) {
     return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
@@ -641,8 +641,8 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public PrimitiveService newService() {
-      return new PerformanceService();
+    public PrimitiveStateMachine newService() {
+      return new PerformanceStateMachine();
     }
 
     @Override
@@ -654,7 +654,7 @@ public class RaftFuzzTest implements Runnable {
   /**
    * Fuzz test state machine.
    */
-  public static class FuzzStateMachine extends AbstractPrimitiveService {
+  public static class FuzzStateMachine extends AbstractPrimitiveStateMachine {
     private Map<String, String> map = new HashMap<>();
 
     @Override

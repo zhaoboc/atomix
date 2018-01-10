@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive;
 
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 import io.atomix.utils.Identifier;
 
 /**
@@ -36,7 +36,7 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, P>, P ex
    *
    * @return a new primitive service instance
    */
-  PrimitiveService newService();
+  PrimitiveStateMachine newService();
 
   /**
    * Returns a new primitive builder for the given partition.

@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.proxy.impl;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 /**
  * Test primitive type.
@@ -30,7 +30,7 @@ public class TestPrimitiveType implements PrimitiveType {
   }
 
   @Override
-  public PrimitiveService newService() {
+  public PrimitiveStateMachine newService() {
     throw new UnsupportedOperationException();
   }
 

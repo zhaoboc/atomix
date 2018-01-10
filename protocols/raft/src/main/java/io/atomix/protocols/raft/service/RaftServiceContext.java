@@ -22,7 +22,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
@@ -68,7 +68,7 @@ public class RaftServiceContext implements ServiceContext {
   private final PrimitiveId primitiveId;
   private final String serviceName;
   private final PrimitiveType primitiveType;
-  private final PrimitiveService service;
+  private final PrimitiveStateMachine service;
   private final RaftContext raft;
   private final RaftSessions sessions;
   private final ThreadContext serviceExecutor;
@@ -78,6 +78,7 @@ public class RaftServiceContext implements ServiceContext {
   private final Map<Long, PendingSnapshot> pendingSnapshots = new ConcurrentSkipListMap<>();
   private long snapshotIndex;
   private long currentIndex;
+  private Session currentSession;
   private long currentTimestamp;
   private OperationType currentOperation;
   private final LogicalClock logicalClock = new LogicalClock() {
@@ -97,7 +98,7 @@ public class RaftServiceContext implements ServiceContext {
       PrimitiveId primitiveId,
       String serviceName,
       PrimitiveType primitiveType,
-      PrimitiveService service,
+      PrimitiveStateMachine service,
       RaftContext raft,
       ThreadContextFactory threadContextFactory) {
     this.primitiveId = checkNotNull(primitiveId);
@@ -110,7 +111,7 @@ public class RaftServiceContext implements ServiceContext {
     this.snapshotExecutor = threadContextFactory.createContext();
     this.loadMonitor = new LoadMonitor(LOAD_WINDOW_SIZE, HIGH_LOAD_THRESHOLD, serviceExecutor);
     this.threadContextFactory = threadContextFactory;
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveStateMachine.class)
         .addValue(primitiveId)
         .add("type", primitiveType)
         .add("name", serviceName)
@@ -144,6 +145,11 @@ public class RaftServiceContext implements ServiceContext {
   @Override
   public long currentIndex() {
     return currentIndex;
+  }
+
+  @Override
+  public Session currentSession() {
+    return currentSession;
   }
 
   @Override
@@ -663,6 +669,8 @@ public class RaftServiceContext implements ServiceContext {
 
     OperationResult result;
     try {
+      currentSession = session;
+
       // Execute the state machine operation and get the result.
       byte[] output = service.apply(commit);
 
@@ -671,6 +679,8 @@ public class RaftServiceContext implements ServiceContext {
     } catch (Exception e) {
       // If an exception occurs during execution of the command, store the exception.
       result = OperationResult.failed(index, eventIndex, e);
+    } finally {
+      currentSession = null;
     }
 
     // Once the operation has been applied to the state machine, commit events published by the command.
@@ -764,9 +774,12 @@ public class RaftServiceContext implements ServiceContext {
 
     OperationResult result;
     try {
+      currentSession = session;
       result = OperationResult.succeeded(currentIndex, eventIndex, service.apply(commit));
     } catch (Exception e) {
       result = OperationResult.failed(currentIndex, eventIndex, e);
+    } finally {
+      currentSession = null;
     }
     future.complete(result);
   }

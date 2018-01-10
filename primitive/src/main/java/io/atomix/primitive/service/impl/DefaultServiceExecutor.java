@@ -19,7 +19,7 @@ import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.utils.concurrent.Scheduled;
@@ -55,7 +55,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
   private long timestamp;
 
   public DefaultServiceExecutor(ServiceContext context) {
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveStateMachine.class)
         .addValue(context.serviceId())
         .add("type", context.serviceType())
         .add("name", context.serviceName())

@@ -62,7 +62,7 @@ import java.util.TreeMap;
  * State machine corresponding to {@link ConsistentTreeMapProxy} backed by a
  * {@link TreeMap}.
  */
-public class ConsistentTreeMapService extends ConsistentMapService {
+public class ConsistentTreeMapStateMachine extends ConsistentMapStateMachine {
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)

@@ -21,7 +21,7 @@ import io.atomix.core.value.AtomicValueEvent;
 import io.atomix.core.value.impl.AtomicValueOperations.CompareAndSet;
 import io.atomix.core.value.impl.AtomicValueOperations.GetAndSet;
 import io.atomix.core.value.impl.AtomicValueOperations.Set;
-import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.AbstractPrimitiveStateMachine;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
@@ -45,7 +45,7 @@ import java.util.HashSet;
 /**
  * Raft atomic value service.
  */
-public class AtomicValueService extends AbstractPrimitiveService {
+public class AtomicValueStateMachine extends AbstractPrimitiveStateMachine {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicValueOperations.NAMESPACE)
@@ -80,7 +80,7 @@ public class AtomicValueService extends AbstractPrimitiveService {
     value = reader.readBytes(reader.readInt());
     listeners = new HashSet<>();
     for (Long sessionId : reader.<java.util.Set<Long>>readObject(SERIALIZER::decode)) {
-      listeners.add(sessions().getSession(sessionId));
+      listeners.add(getSessions().getSession(sessionId));
     }
   }
 

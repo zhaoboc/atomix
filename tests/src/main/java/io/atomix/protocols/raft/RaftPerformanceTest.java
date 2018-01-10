@@ -28,10 +28,10 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
+import io.atomix.primitive.service.AbstractPrimitiveStateMachine;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -289,7 +289,7 @@ public class RaftPerformanceTest implements Runnable {
 
     CompletableFuture<Void>[] futures = new CompletableFuture[NUM_CLIENTS];
     RaftClient[] clients = new RaftClient[NUM_CLIENTS];
-    PrimitiveProxy[] proxies = new PrimitiveProxy[NUM_CLIENTS];
+    PrimitiveProxyClient[] proxies = new PrimitiveProxyClient[NUM_CLIENTS];
     for (int i = 0; i < NUM_CLIENTS; i++) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       clients[i] = createClient();
@@ -316,7 +316,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Runs operations for a single Raft proxy.
    */
-  private void runProxy(PrimitiveProxy proxy, CompletableFuture<Void> future) {
+  private void runProxy(PrimitiveProxyClient proxy, CompletableFuture<Void> future) {
     int count = totalOperations.incrementAndGet();
     if (count > TOTAL_OPERATIONS) {
       future.complete(null);
@@ -508,7 +508,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Creates a test session.
    */
-  private PrimitiveProxy createProxy(RaftClient client) {
+  private PrimitiveProxyClient createProxy(RaftClient client) {
     return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
@@ -532,8 +532,8 @@ public class RaftPerformanceTest implements Runnable {
     }
 
     @Override
-    public PrimitiveService newService() {
-      return new PerformanceService();
+    public PrimitiveStateMachine newService() {
+      return new PerformanceStateMachine();
     }
 
     @Override
@@ -545,7 +545,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Performance test state machine.
    */
-  public static class PerformanceService extends AbstractPrimitiveService {
+  public static class PerformanceStateMachine extends AbstractPrimitiveStateMachine {
     private Map<String, String> map = new HashMap<>();
 
     @Override

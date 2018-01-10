@@ -18,7 +18,7 @@ package io.atomix.primitive.proxy.impl;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -29,7 +29,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Default Raft proxy.
  */
-public abstract class AbstractPrimitiveProxy implements PrimitiveProxy {
+public abstract class AbstractPrimitiveProxyClient implements PrimitiveProxyClient {
   private final Map<EventType, Map<Object, Consumer<PrimitiveEvent>>> eventTypeListeners = Maps.newConcurrentMap();
 
   @Override

@@ -17,8 +17,8 @@ package io.atomix.core.generator;
 
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
-import io.atomix.core.counter.impl.AtomicCounterService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
+import io.atomix.core.counter.impl.AtomicCounterStateMachine;
 import io.atomix.core.generator.impl.DelegatingIdGeneratorBuilder;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -47,8 +47,8 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new AtomicCounterService();
+  public PrimitiveStateMachine newService() {
+    return new AtomicCounterStateMachine();
   }
 
   @Override

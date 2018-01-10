@@ -22,7 +22,6 @@ import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.election.Leadership;
-import io.atomix.core.election.impl.LeaderElectionService;
 import io.atomix.core.election.impl.LeaderElectionOperations.Run;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
@@ -50,7 +49,7 @@ public class LeaderElectionServiceTest {
     Session session = mock(Session.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
 
-    LeaderElectionService service = new LeaderElectionService();
+    LeaderElectionStateMachine service = new LeaderElectionStateMachine();
     service.init(context);
 
     byte[] id = "a".getBytes();
@@ -64,7 +63,7 @@ public class LeaderElectionServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(buffer);
 
-    service = new LeaderElectionService();
+    service = new LeaderElectionStateMachine();
     service.init(context);
     service.restore(buffer.flip());
 

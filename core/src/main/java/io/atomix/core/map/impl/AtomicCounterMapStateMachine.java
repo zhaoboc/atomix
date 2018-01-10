@@ -27,7 +27,7 @@ import io.atomix.core.map.impl.AtomicCounterMapOperations.PutIfAbsent;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Remove;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.RemoveValue;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Replace;
-import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.AbstractPrimitiveStateMachine;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.storage.buffer.BufferInput;
@@ -63,7 +63,7 @@ import java.util.Map;
  * of all its increments. Note that this snapshotting large state machines may risk blocking of the
  * Raft cluster with the current implementation of snapshotting in Copycat.
  */
-public class AtomicCounterMapService extends AbstractPrimitiveService {
+public class AtomicCounterMapStateMachine extends AbstractPrimitiveStateMachine {
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)

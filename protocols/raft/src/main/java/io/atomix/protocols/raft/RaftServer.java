@@ -19,7 +19,7 @@ import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.impl.DefaultRaftServer;
@@ -51,7 +51,7 @@ import static io.atomix.protocols.raft.RaftException.*;
  * to which to bind the internal {@link io.atomix.protocols.raft.protocol.RaftServerProtocol} and a set of addresses
  * for other members in the cluster.
  * <h2>State machines</h2>
- * Underlying each server is a {@link PrimitiveService}. The state machine is responsible for maintaining the state with
+ * Underlying each server is a {@link PrimitiveStateMachine}. The state machine is responsible for maintaining the state with
  * relation to {@link OperationType#COMMAND}s and
  * {@link OperationType#QUERY}s submitted to the server by a client. State machines
  * are provided in a factory to allow servers to transition between stateful and stateless states.
@@ -143,7 +143,7 @@ import static io.atomix.protocols.raft.RaftException.*;
  *   }
  * </pre>
  *
- * @see PrimitiveService
+ * @see PrimitiveStateMachine
  * @see RaftStorage
  */
 public interface RaftServer {
@@ -547,7 +547,7 @@ public interface RaftServer {
    *     .build();
    *   }
    * </pre>
-   * Each server <em>must</em> be configured with a {@link PrimitiveService}. The state machine is the component of the
+   * Each server <em>must</em> be configured with a {@link PrimitiveStateMachine}. The state machine is the component of the
    * server that stores state and reacts to commands and queries submitted by clients to the cluster. State machines
    * are provided to the server in the form of a state machine {@link Supplier factory} to allow the server to reconstruct
    * its state when necessary.

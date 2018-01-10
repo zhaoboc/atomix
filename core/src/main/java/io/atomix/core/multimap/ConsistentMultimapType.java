@@ -16,10 +16,10 @@
 package io.atomix.core.multimap;
 
 import io.atomix.core.multimap.impl.ConsistentMultimapProxyBuilder;
-import io.atomix.core.multimap.impl.ConsistentSetMultimapService;
+import io.atomix.core.multimap.impl.ConsistentSetMultimapStateMachine;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -49,8 +49,8 @@ public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMul
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new ConsistentSetMultimapService();
+  public PrimitiveStateMachine newService() {
+    return new ConsistentSetMultimapStateMachine();
   }
 
   @Override

@@ -16,10 +16,10 @@
 package io.atomix.core.counter;
 
 import io.atomix.core.counter.impl.AtomicCounterProxyBuilder;
-import io.atomix.core.counter.impl.AtomicCounterService;
+import io.atomix.core.counter.impl.AtomicCounterStateMachine;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -47,8 +47,8 @@ public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, At
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new AtomicCounterService();
+  public PrimitiveStateMachine newService() {
+    return new AtomicCounterStateMachine();
   }
 
   @Override

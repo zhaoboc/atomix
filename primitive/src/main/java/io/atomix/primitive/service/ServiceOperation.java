@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive;
+package io.atomix.primitive.service;
 
-import io.atomix.primitive.service.PrimitiveStateMachine;
+import io.atomix.primitive.operation.OperationType;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Test primitive type.
+ * Primitive service operation.
  */
-public class TestPrimitiveType implements PrimitiveType {
-  @Override
-  public String id() {
-    return "test";
-  }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface ServiceOperation {
 
-  @Override
-  public PrimitiveStateMachine newService() {
-    throw new UnsupportedOperationException();
-  }
+  /**
+   * The operation name.
+   */
+  String value();
 
-  @Override
-  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    throw new UnsupportedOperationException();
-  }
+  /**
+   * The operation type.
+   */
+  OperationType type();
+
 }

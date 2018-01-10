@@ -16,10 +16,10 @@
 package io.atomix.core.lock;
 
 import io.atomix.core.lock.impl.DistributedLockProxyBuilder;
-import io.atomix.core.lock.impl.DistributedLockService;
+import io.atomix.core.lock.impl.DistributedLockStateMachine;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -47,8 +47,8 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new DistributedLockService();
+  public PrimitiveStateMachine newService() {
+    return new DistributedLockStateMachine();
   }
 
   @Override

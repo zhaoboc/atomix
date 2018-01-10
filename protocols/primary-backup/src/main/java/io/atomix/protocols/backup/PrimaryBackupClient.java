@@ -23,16 +23,16 @@ import io.atomix.primitive.PrimitiveException.Unavailable;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
-import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxy;
-import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
+import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxyClient;
+import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxyClient;
+import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxyClient;
 import io.atomix.primitive.session.SessionIdService;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
-import io.atomix.protocols.backup.proxy.PrimaryBackupProxy;
+import io.atomix.protocols.backup.proxy.PrimaryBackupProxyClient;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -92,8 +92,8 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
 
   @Override
   @SuppressWarnings("unchecked")
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
-    Supplier<PrimitiveProxy> proxyBuilder = () -> new PrimaryBackupProxy(
+  public PrimitiveProxyClient newProxy(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
+    Supplier<PrimitiveProxyClient> proxyBuilder = () -> new PrimaryBackupProxyClient(
         clientName,
         sessionIdService.nextSessionId().join(),
         primitiveType,
@@ -107,9 +107,9 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
         primaryElection,
         threadContextFactory.createContext());
 
-    PrimitiveProxy proxy;
+    PrimitiveProxyClient proxy;
     if (primitiveProtocol.recovery() == Recovery.RECOVER) {
-      proxy = new RecoveringPrimitiveProxy(
+      proxy = new RecoveringPrimitiveProxyClient(
           clientName,
           primitiveName,
           primitiveType,
@@ -121,7 +121,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
 
     // If max retries is set, wrap the client in a retrying proxy client.
     if (primitiveProtocol.maxRetries() > 0) {
-      proxy = new RetryingPrimitiveProxy(
+      proxy = new RetryingPrimitiveProxyClient(
           proxy,
           threadContextFactory.createContext(),
           primitiveProtocol.maxRetries(),
@@ -132,7 +132,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
     Executor executor = primitiveProtocol.executor() != null
         ? primitiveProtocol.executor()
         : threadContextFactory.createContext();
-    return new BlockingAwarePrimitiveProxy(proxy, executor);
+    return new BlockingAwarePrimitiveProxyClient(proxy, executor);
   }
 
   @Override

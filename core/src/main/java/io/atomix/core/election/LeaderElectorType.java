@@ -16,10 +16,10 @@
 package io.atomix.core.election;
 
 import io.atomix.core.election.impl.LeaderElectorProxyBuilder;
-import io.atomix.core.election.impl.LeaderElectorService;
+import io.atomix.core.election.impl.LeaderElectorStateMachine;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -48,8 +48,8 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new LeaderElectorService();
+  public PrimitiveStateMachine newService() {
+    return new LeaderElectorStateMachine();
   }
 
   @Override

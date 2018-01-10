@@ -33,14 +33,14 @@ public interface PrimitiveProxyExecutor {
    *
    * @param listener The callback to call when the session state changes.
    */
-  void addStateChangeListener(Consumer<PrimitiveProxy.State> listener);
+  void addStateChangeListener(Consumer<PrimitiveProxyClient.State> listener);
 
   /**
    * Removes a state change listener.
    *
    * @param listener the state change listener to remove
    */
-  void removeStateChangeListener(Consumer<PrimitiveProxy.State> listener);
+  void removeStateChangeListener(Consumer<PrimitiveProxyClient.State> listener);
 
   /**
    * Executes an operation to the Raft cluster.

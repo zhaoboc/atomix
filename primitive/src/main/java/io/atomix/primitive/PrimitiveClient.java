@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive;
 
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +33,7 @@ public interface PrimitiveClient<P extends PrimitiveProtocol> {
    * @param primitiveProtocol the primitive protocol
    * @return a new proxy builder for the given primitive type
    */
-  PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, P primitiveProtocol);
+  PrimitiveProxyClient newProxy(String primitiveName, PrimitiveType primitiveType, P primitiveProtocol);
 
   /**
    * Gets a list of primitives of the given type.

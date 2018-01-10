@@ -20,7 +20,7 @@ import io.atomix.core.generator.AsyncAtomicIdGenerator;
 import io.atomix.core.generator.AtomicIdGeneratorType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PartitionGroup;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionIdService;
@@ -56,7 +56,7 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<SessionIdService> start() {
-    PrimitiveProxy proxy = partitions.getPartition(PRIMITIVE_NAME)
+    PrimitiveProxyClient proxy = partitions.getPartition(PRIMITIVE_NAME)
         .getPrimitiveClient()
         .newProxy(PRIMITIVE_NAME, AtomicIdGeneratorType.instance(), RaftProtocol.builder()
             .withMinTimeout(Duration.ofMillis(250))

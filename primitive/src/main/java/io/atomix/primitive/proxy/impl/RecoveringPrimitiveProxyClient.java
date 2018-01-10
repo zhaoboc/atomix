@@ -19,7 +19,7 @@ import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
@@ -42,34 +42,34 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Primitive proxy that supports recovery.
  */
-public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
+public class RecoveringPrimitiveProxyClient extends AbstractPrimitiveProxyClient {
   private static final SessionId DEFAULT_SESSION_ID = SessionId.from(0);
   private final String name;
   private final PrimitiveType primitiveType;
-  private final Supplier<PrimitiveProxy> proxyFactory;
+  private final Supplier<PrimitiveProxyClient> proxyFactory;
   private final Scheduler scheduler;
   private Logger log;
-  private volatile OrderedFuture<PrimitiveProxy> clientFuture;
-  private volatile PrimitiveProxy proxy;
-  private volatile PrimitiveProxy.State state = PrimitiveProxy.State.SUSPENDED;
-  private final Set<Consumer<PrimitiveProxy.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
+  private volatile OrderedFuture<PrimitiveProxyClient> clientFuture;
+  private volatile PrimitiveProxyClient proxy;
+  private volatile PrimitiveProxyClient.State state = PrimitiveProxyClient.State.SUSPENDED;
+  private final Set<Consumer<PrimitiveProxyClient.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Set<Consumer<PrimitiveEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
   private Scheduled recoverTask;
   private volatile boolean connected = false;
 
-  public RecoveringPrimitiveProxy(String clientId, String name, PrimitiveType primitiveType, Supplier<PrimitiveProxy> proxyFactory, Scheduler scheduler) {
+  public RecoveringPrimitiveProxyClient(String clientId, String name, PrimitiveType primitiveType, Supplier<PrimitiveProxyClient> proxyFactory, Scheduler scheduler) {
     this.name = checkNotNull(name);
     this.primitiveType = checkNotNull(primitiveType);
     this.proxyFactory = checkNotNull(proxyFactory);
     this.scheduler = checkNotNull(scheduler);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxyClient.class)
         .addValue(clientId)
         .build());
   }
 
   @Override
   public SessionId sessionId() {
-    PrimitiveProxy proxy = this.proxy;
+    PrimitiveProxyClient proxy = this.proxy;
     return proxy != null ? proxy.sessionId() : DEFAULT_SESSION_ID;
   }
 
@@ -84,7 +84,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public PrimitiveProxy.State getState() {
+  public PrimitiveProxyClient.State getState() {
     return state;
   }
 
@@ -93,11 +93,11 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
    *
    * @param state the session state
    */
-  private synchronized void onStateChange(PrimitiveProxy.State state) {
+  private synchronized void onStateChange(PrimitiveProxyClient.State state) {
     if (this.state != state) {
-      if (state == PrimitiveProxy.State.CLOSED) {
+      if (state == PrimitiveProxyClient.State.CLOSED) {
         if (connected) {
-          onStateChange(PrimitiveProxy.State.SUSPENDED);
+          onStateChange(PrimitiveProxyClient.State.SUSPENDED);
           recover();
         } else {
           log.debug("State changed: {}", state);
@@ -113,12 +113,12 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public void addStateChangeListener(Consumer<PrimitiveProxy.State> listener) {
+  public void addStateChangeListener(Consumer<PrimitiveProxyClient.State> listener) {
     stateChangeListeners.add(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<PrimitiveProxy.State> listener) {
+  public void removeStateChangeListener(Consumer<PrimitiveProxyClient.State> listener) {
     stateChangeListeners.remove(listener);
   }
 
@@ -142,7 +142,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
    *
    * @return a future to be completed once the client has been opened
    */
-  private CompletableFuture<PrimitiveProxy> openProxy() {
+  private CompletableFuture<PrimitiveProxyClient> openProxy() {
     if (connected) {
       log.debug("Opening proxy session");
 
@@ -151,7 +151,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
 
       return clientFuture.thenApply(client -> {
         synchronized (this) {
-          this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
+          this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxyClient.class)
               .addValue(client.sessionId())
               .add("type", client.serviceType())
               .add("name", client.name())
@@ -159,7 +159,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
           this.proxy = client;
           client.addStateChangeListener(this::onStateChange);
           eventListeners.forEach(client::addEventListener);
-          onStateChange(PrimitiveProxy.State.CONNECTED);
+          onStateChange(PrimitiveProxyClient.State.CONNECTED);
         }
         return client;
       });
@@ -172,7 +172,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
    *
    * @param future the future to be completed once the client is opened
    */
-  private void openProxy(CompletableFuture<PrimitiveProxy> future) {
+  private void openProxy(CompletableFuture<PrimitiveProxyClient> future) {
     proxyFactory.get().connect().whenComplete((proxy, error) -> {
       if (error == null) {
         future.complete(proxy);
@@ -185,7 +185,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
     checkOpen();
-    PrimitiveProxy proxy = this.proxy;
+    PrimitiveProxyClient proxy = this.proxy;
     if (proxy != null) {
       return proxy.execute(operation);
     } else {
@@ -197,7 +197,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   public synchronized void addEventListener(Consumer<PrimitiveEvent> consumer) {
     checkOpen();
     eventListeners.add(consumer);
-    PrimitiveProxy proxy = this.proxy;
+    PrimitiveProxyClient proxy = this.proxy;
     if (proxy != null) {
       proxy.addEventListener(consumer);
     }
@@ -207,14 +207,14 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   public synchronized void removeEventListener(Consumer<PrimitiveEvent> consumer) {
     checkOpen();
     eventListeners.remove(consumer);
-    PrimitiveProxy proxy = this.proxy;
+    PrimitiveProxyClient proxy = this.proxy;
     if (proxy != null) {
       proxy.removeEventListener(consumer);
     }
   }
 
   @Override
-  public synchronized CompletableFuture<PrimitiveProxy> connect() {
+  public synchronized CompletableFuture<PrimitiveProxyClient> connect() {
     if (!connected) {
       connected = true;
       return openProxy().thenApply(c -> this);
@@ -230,7 +230,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
         recoverTask.cancel();
       }
 
-      PrimitiveProxy proxy = this.proxy;
+      PrimitiveProxyClient proxy = this.proxy;
       if (proxy != null) {
         return proxy.close();
       } else {

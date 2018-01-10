@@ -38,7 +38,7 @@ import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
 import io.atomix.core.tree.impl.DocumentTreeResult.Status;
 import io.atomix.primitive.Ordering;
 import io.atomix.primitive.event.EventType;
-import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.AbstractPrimitiveStateMachine;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
@@ -74,7 +74,7 @@ import java.util.stream.Collectors;
 /**
  * State Machine for {@link DocumentTreeProxy} resource.
  */
-public class DocumentTreeService extends AbstractPrimitiveService {
+public class DocumentTreeStateMachine extends AbstractPrimitiveStateMachine {
   private final Serializer serializer = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(DocumentTreeOperations.NAMESPACE)
@@ -88,7 +88,7 @@ public class DocumentTreeService extends AbstractPrimitiveService {
 
         @Override
         public Listener read(Kryo kryo, Input input, Class<Listener> type) {
-          return new Listener(sessions().getSession(input.readLong()),
+          return new Listener(getSessions().getSession(input.readLong()),
               kryo.readObjectOrNull(input, DocumentPath.class));
         }
       }, Listener.class)
@@ -119,7 +119,7 @@ public class DocumentTreeService extends AbstractPrimitiveService {
   private DocumentTree<byte[]> docTree;
   private Set<DocumentPath> preparedKeys = Sets.newHashSet();
 
-  public DocumentTreeService(Ordering ordering) {
+  public DocumentTreeStateMachine(Ordering ordering) {
     this.docTree = new DefaultDocumentTree<>(versionCounter::incrementAndGet, ordering);
   }
 
@@ -247,7 +247,7 @@ public class DocumentTreeService extends AbstractPrimitiveService {
     } catch (NoSuchDocumentPathException e) {
       result = DocumentTreeResult.invalidPath();
     } catch (Exception e) {
-      logger().error("Failed to apply {} to state machine", commit.value(), e);
+      getLogger().error("Failed to apply {} to state machine", commit.value(), e);
       throw Throwables.propagate(e);
     }
     return result;

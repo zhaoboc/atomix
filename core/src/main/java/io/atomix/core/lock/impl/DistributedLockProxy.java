@@ -19,8 +19,8 @@ import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.impl.DistributedLockOperations.Lock;
 import io.atomix.core.lock.impl.DistributedLockOperations.Unlock;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.impl.AsyncPrimitiveClient;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Raft lock.
  */
-public class DistributedLockProxy extends AbstractAsyncPrimitive implements AsyncDistributedLock {
+public class DistributedLockProxy extends AsyncPrimitiveClient implements AsyncDistributedLock {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(DistributedLockOperations.NAMESPACE)
@@ -50,7 +50,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
   private final AtomicInteger id = new AtomicInteger();
   private int lock;
 
-  public DistributedLockProxy(PrimitiveProxy proxy) {
+  public DistributedLockProxy(PrimitiveProxyClient proxy) {
     super(proxy);
     proxy.addEventListener(DistributedLockEvents.LOCK, SERIALIZER::decode, this::handleLocked);
     proxy.addEventListener(DistributedLockEvents.FAIL, SERIALIZER::decode, this::handleFailed);
@@ -76,7 +76,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
     CompletableFuture<Version> future = new CompletableFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
-    proxy.invoke(LOCK, SERIALIZER::encode, new Lock(id, -1)).whenComplete((result, error) -> {
+    client.invoke(LOCK, SERIALIZER::encode, new Lock(id, -1)).whenComplete((result, error) -> {
       if (error != null) {
         futures.remove(id);
         future.completeExceptionally(error);
@@ -90,7 +90,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
     CompletableFuture<Version> future = new CompletableFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
-    proxy.invoke(LOCK, SERIALIZER::encode, new Lock(id, 0)).whenComplete((result, error) -> {
+    client.invoke(LOCK, SERIALIZER::encode, new Lock(id, 0)).whenComplete((result, error) -> {
       if (error != null) {
         futures.remove(id);
         future.completeExceptionally(error);
@@ -104,7 +104,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
     CompletableFuture<Version> future = new CompletableFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
-    proxy.invoke(LOCK, SERIALIZER::encode, new Lock(id, timeout.toMillis())).whenComplete((result, error) -> {
+    client.invoke(LOCK, SERIALIZER::encode, new Lock(id, timeout.toMillis())).whenComplete((result, error) -> {
       if (error != null) {
         futures.remove(id);
         future.completeExceptionally(error);
@@ -119,7 +119,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
     int lock = this.lock;
     this.lock = 0;
     if (lock != 0) {
-      return proxy.invoke(UNLOCK, SERIALIZER::encode, new Unlock(lock));
+      return client.invoke(UNLOCK, SERIALIZER::encode, new Unlock(lock));
     }
     return CompletableFuture.completedFuture(null);
   }

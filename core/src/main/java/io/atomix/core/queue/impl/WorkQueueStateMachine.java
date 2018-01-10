@@ -27,7 +27,7 @@ import io.atomix.core.queue.WorkQueueStats;
 import io.atomix.core.queue.impl.WorkQueueOperations.Add;
 import io.atomix.core.queue.impl.WorkQueueOperations.Complete;
 import io.atomix.core.queue.impl.WorkQueueOperations.Take;
-import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.AbstractPrimitiveStateMachine;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
@@ -62,7 +62,7 @@ import java.util.stream.IntStream;
 /**
  * State machine for {@link WorkQueueProxy} resource.
  */
-public class WorkQueueService extends AbstractPrimitiveService {
+public class WorkQueueStateMachine extends AbstractPrimitiveStateMachine {
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
@@ -91,7 +91,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
   public void restore(BufferInput<?> reader) {
     registeredWorkers = Maps.newHashMap();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
-      registeredWorkers.put(sessionId, sessions().getSession(sessionId));
+      registeredWorkers.put(sessionId, getSessions().getSession(sessionId));
     }
     assignments = reader.readObject(SERIALIZER::decode);
     unassignedTasks = reader.readObject(SERIALIZER::decode);
@@ -169,7 +169,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
           })
           .collect(Collectors.toCollection(ArrayList::new));
     } catch (Exception e) {
-      logger().warn("State machine update failed", e);
+      getLogger().warn("State machine update failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -186,7 +186,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
         }
       });
     } catch (Exception e) {
-      logger().warn("State machine update failed", e);
+      getLogger().warn("State machine update failed", e);
       throw Throwables.propagate(e);
     }
   }

@@ -26,7 +26,7 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
     this.managementService = checkNotNull(managementService);
   }
 
-  private CompletableFuture<AsyncLeaderElector<T>> newLeaderElector(PrimitiveProxy proxy) {
+  private CompletableFuture<AsyncLeaderElector<T>> newLeaderElector(PrimitiveProxyClient proxy) {
     return proxy.connect()
         .thenApply(p -> new TranscodingAsyncLeaderElector<T, byte[]>(
             new LeaderElectorProxy(proxy), serializer()::encode, serializer()::decode));

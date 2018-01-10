@@ -26,7 +26,7 @@ import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
-import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.PrimitiveStateMachine;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
@@ -71,7 +71,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private final PrimitiveId primitiveId;
   private final PrimitiveType primitiveType;
   private final PrimitiveDescriptor descriptor;
-  private final PrimitiveService service;
+  private final PrimitiveStateMachine service;
   private final PrimaryBackupServiceSessions sessions = new PrimaryBackupServiceSessions();
   private final ThreadContext threadContext;
   private final ClusterService clusterService;
@@ -81,6 +81,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private List<NodeId> backups;
   private long currentTerm;
   private long currentIndex;
+  private Session currentSession;
   private long currentTimestamp;
   private long operationIndex;
   private long commitIndex;
@@ -120,7 +121,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     this.clusterService = checkNotNull(clusterService);
     this.protocol = checkNotNull(protocol);
     this.primaryElection = checkNotNull(primaryElection);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveStateMachine.class)
         .addValue(serverName)
         .add("type", descriptor.type())
         .add("name", descriptor.name())
@@ -199,6 +200,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     return currentIndex;
   }
 
+  @Override
+  public Session currentSession() {
+    return currentSession;
+  }
+
   /**
    * Returns the current wall clock timestamp.
    *
@@ -253,7 +259,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   /**
    * Increments the current index and returns true if the given index is the next index.
    *
-   * @param index     the index to which to increment the current index
+   * @param index the index to which to increment the current index
    * @return indicates whether the current index was successfully incremented
    */
   public boolean nextIndex(long index) {
@@ -298,6 +304,17 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public long getIndex() {
     currentOperation = OperationType.QUERY;
     return currentIndex;
+  }
+
+  /**
+   * Sets the current session.
+   *
+   * @param session the current session
+   * @return the current session
+   */
+  public Session setSession(Session session) {
+    this.currentSession = session;
+    return session;
   }
 
   /**
@@ -381,7 +398,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    *
    * @return the primitive service instance
    */
-  public PrimitiveService service() {
+  public PrimitiveStateMachine service() {
     return service;
   }
 

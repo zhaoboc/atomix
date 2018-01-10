@@ -29,7 +29,7 @@ import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryElectionService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PrimitiveProxyClient;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
@@ -88,7 +88,7 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
 
   @SuppressWarnings("unchecked")
   private AsyncLeaderElector<NodeId> newLeaderElector(Partition partition) {
-    PrimitiveProxy proxy = partition.getPrimitiveClient()
+    PrimitiveProxyClient proxy = partition.getPrimitiveClient()
         .newProxy(PRIMITIVE_NAME, LeaderElectorType.instance(), RaftProtocol.builder()
             .withMinTimeout(Duration.ofMillis(250))
             .withMaxTimeout(Duration.ofSeconds(5))
